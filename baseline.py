@@ -15,8 +15,9 @@ test_set = pd.read_csv('test_images_sample.csv')
 #print(test_set)
 
 class_names = np.load("class_names.npy", allow_pickle=True).item()
-#print(class_names)
-
+print(class_names)
+print(class_names[0])
+'''
 # pre-processing - Example for the first image
 first_image_path = train_set['image_path'][0]
 image_example = Image.open(f"train_images{first_image_path}")
@@ -25,6 +26,8 @@ image_example = Image.open(f"train_images{first_image_path}")
 # normalized across the RGB channels with mean (0.5, 0.5, 0.5)
 # and standard deviation (0.5, 0.5, 0.5)
 processor = ViTImageProcessor.from_pretrained('google/vit-base-patch16-224')
+
+
 resized = processor.preprocess(images=image_example,
                                        do_resize=True,
                                        do_normalize=True,
@@ -32,6 +35,21 @@ resized = processor.preprocess(images=image_example,
                                        image_mean=[0.5, 0.5, 0.5],
                                        image_std=[0.5, 0.5, 0.5])
 
-print(image_example)
-print(resized)
+#print(image_example)
+#print(resized)
 
+
+model = ViTForImageClassification.from_pretrained('google/vit-base-patch16-224')
+
+inputs = processor(images=image_example, return_tensors="pt")
+outputs = model(**inputs)
+logits = outputs.logits
+# model predicts one of the 1000 ImageNet classes
+predicted_class_idx = logits.argmax(-1).item()
+print("Predicted class:", model.config.id2label[predicted_class_idx])
+
+# first train and test without features
+
+# then train and test with features
+
+'''
