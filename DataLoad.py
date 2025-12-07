@@ -5,7 +5,6 @@ from pathlib import Path
 from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import v2
 import os
-import matplotlib.pyplot as plt
 
 
 TRANSFORM = v2.Compose(
@@ -44,28 +43,3 @@ class DataLoad(Dataset):
         return image, label_image
 
 
-DEBUG = False
-DATA_TRAIN_DIR = Path("./train_images")
-DATA_TEST_DIR = Path("./test_images")
-
-# im guessing this is more for visualisation purposes
-# class_names = np.load("class_names.npy", allow_pickle=True).item()
-
-# load the data with pandas
-train_set = pd.read_csv('train_images.csv')
-test_set = pd.read_csv('test_images_path.csv')
-
-train_dataset = DataLoad(data=train_set, data_path=DATA_TRAIN_DIR)
-test_dataset = DataLoad(data=test_set, data_path=DATA_TEST_DIR)
-
-if DEBUG:
-    transformed_image, label = train_dataset.__getitem__(0)
-    print(label)
-
-train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-test_dataloader = DataLoader(test_dataset, batch_size=64, shuffle=True)
-
-# Display image and label.
-train_features, train_labels = next(iter(train_dataloader))
-print(f"Feature batch shape: {train_features.size()}")
-print(f"Labels batch shape: {train_labels.size()}")
