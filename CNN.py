@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import pandas as pd
 
 
 def train_model(args,
@@ -31,15 +32,75 @@ def train_model(args,
             # print statistics
             running_loss += loss.item()
 
-        # Print once per epoch # TODO: change this
+        # Print once per epoch
         avg_loss = running_loss / len(dataloader)
         print(f'[Epoch {epoch + 1}] average loss: {avg_loss:.3f}')
 
         # calculate accuracy
 
         scheduler.step()
-        # TODO: save model?
+
     print('Finished Training')
+    # TODO: save model?
+    cnn_path = './first_cnn.pth'
+    torch.save(model.state_dict(), cnn_path)
+
+
+def calc_accuracy(model, dataloader, classes):
+    correct = 0
+    total = 0
+
+    # from pytorch tutorial
+    correct_pred = {classname: 0 for classname in classes}
+    total_pred = {classname: 0 for classname in classes}
+    names = list(correct_pred.keys())
+
+    with torch.no_grad():
+        for data in dataloader:
+            images, targets = data
+            # calculate outputs by running images through the network
+            outputs = model(images)
+            # the class with the highest energy is what we choose as prediction
+            _, predicted = torch.max(outputs, 1)
+            total += targets.size(0)
+            correct += (predicted == targets).sum().item()
+
+            # collect the correct predictions for each class
+            for label, prediction in zip(targets, predicted):
+                #print("LABEL: ", label)
+                #print("PREDICTION: ", prediction)
+                if label == prediction:
+                    correct_pred[names[label - 1]] += 1
+                total_pred[names[label - 1]] += 1
+
+    print(f'Accuracy for test images: {100 * correct // total} %')
+
+    # print accuracy for each class
+    for classname, correct_count in correct_pred.items():
+        if total_pred[classname] != 0:
+            accuracy = 100 * float(correct_count) / total_pred[classname]
+            print(f'Accuracy for class: {classname:5s} is {accuracy:.1f} %')
+        else:
+            print(f'Accuracy for class: {classname:5s} is 0%')
+
+
+def test_model(model,
+               dataloader):
+
+    predicted_labels = []
+    sample = pd.read_csv('test_images_sample.csv')
+
+    with torch.no_grad():
+        for data in dataloader:
+            inputs, targets = data
+            outputs = model(inputs)
+            _, predicted = torch.max(outputs, 1)
+            # print(predicted)
+            for prediction in predicted:
+                predicted_labels.append(int(prediction))
+
+    sample['label'] = predicted_labels
+    sample.to_csv('test_predictionsTrial.csv', index = False)
 
 
 class CNN(nn.Module):

@@ -11,6 +11,8 @@ import argparse
 from DataLoad import DataLoad
 from CNN import CNN
 from CNN import train_model
+from CNN import test_model
+from CNN import calc_accuracy
 
 
 def load_data():
@@ -66,9 +68,19 @@ if __name__ == "__main__":
     # halves the learning rate every 5 epochs
     scheduler = StepLR(optimizer, step_size=5, gamma=0.5)
 
+    '''
     train_model(args,
                 cnn,
                 train_dataloader,
                 optimizer,
                 entropy_loss,
                 scheduler)
+    '''
+    # load model (once its saved) - kind of confused on whether to save it first
+    cnn2 = CNN(class_labels=201)
+    cnn2.load_state_dict(torch.load('./first_cnn.pth', weights_only=True))
+    # test set
+    test_model(cnn2, test_dataloader)
+    #calc_accuracy(cnn2, train_dataloader, classes)
+
+
