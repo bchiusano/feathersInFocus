@@ -39,15 +39,21 @@ net = NeuralNetClassifier(
 )
 
 # search space
+#param_grid = {   THIS IS THE FIRST PARAM_GRID TO FIND LR, USED ADAM DID NOT USE BATCH SIZE
+ #   'lr': [0.0001, 0.001],
+  #  'max_epochs': [3], # should be more in real training
+   # #'batch_size': [32, 64],
+    #'optimizer': [torch.optim.AdamW], # try sgd optimizer 
+    #'optimizer__weight_decay': [0.05]
+#}
+best_lr = 0.0001 # from initial param grid
 param_grid = {
-    'module__class_labels': [201],
-    'lr': [0.0001, 0.001],
-    'max_epochs': [5, 10],
-    'batch_size': [32, 64],
-    'optimizer': [torch.optim.SGD, torch.optim.AdamW],
-    'optimizer__weight_decay': [0.0, 0.05]
+    'lr' : [best_lr],
+    'max_epochs': [5],
+    'batch_size': [32,64],
+    'optimizer': [torch.optim.AdamW],
+    'optimizer__weight_decay':[0.01, 0.05]
 }
-
 grid = GridSearchCV(
     estimator=net,
     param_grid=param_grid,
