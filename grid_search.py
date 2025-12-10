@@ -49,8 +49,8 @@ net = NeuralNetClassifier(
 best_lr = 0.0001 # from initial param grid
 param_grid = {
     'lr' : [best_lr],
-    'max_epochs': [5],
-    'batch_size': [32,64],
+    'max_epochs': [5], # 3
+    #'batch_size': [32,64],
     'optimizer': [torch.optim.AdamW],
     'optimizer__weight_decay':[0.01, 0.05]
 }
