@@ -10,11 +10,13 @@ def train_model(args,
                 optimizer,
                 entropy_loss,
                 scheduler):
+
     # Train CNN
     for epoch in range(1, args.epochs + 1):  # loop over the dataset multiple times
 
         running_loss = 0.0
         for i, data in enumerate(dataloader, 0):
+
             # get the inputs; data is a list of [inputs, labels]
             inputs, target = data
 
@@ -41,8 +43,7 @@ def train_model(args,
         scheduler.step()
 
     print('Finished Training')
-    # TODO: save model?
-    cnn_path = './first_cnn.pth'
+    cnn_path = './third_cnn.pth'
     torch.save(model.state_dict(), cnn_path)
 
 
@@ -100,7 +101,7 @@ def test_model(model,
                 predicted_labels.append(int(prediction))
 
     sample['label'] = predicted_labels
-    sample.to_csv('test_predictionsTrial.csv', index = False)
+    sample.to_csv('test_predictionsNew.csv', index = False)
 
 
 class CNN(nn.Module):
@@ -109,9 +110,9 @@ class CNN(nn.Module):
         self.conv1 = nn.Conv2d(3, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 53 * 53, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, class_labels)
+        self.fc1 = nn.Linear(16 * 53 * 53, 2048)
+        self.fc2 = nn.Linear(2048, 512)
+        self.fc3 = nn.Linear(512, class_labels)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))

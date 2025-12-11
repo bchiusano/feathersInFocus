@@ -39,7 +39,6 @@ class DataLoad(Dataset):
         image = self.transform(Image.open(image_path).convert("RGB"))
 
         label_image = int(self.data['label'][item_idx])
-
         return image, label_image
 
 
