@@ -104,21 +104,19 @@ def test_model(model,
     sample.to_csv('test_predictionsNew.csv', index = False)
 
 
+
 class CNN(nn.Module):
     def __init__(self, class_labels):
         super().__init__()
         self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
+        self.pool = nn.MaxPool2d(2, 2)        
         self.conv2 = nn.Conv2d(6, 16, 5)
-<<<<<<< HEAD
         self.fc1 = nn.Linear(16 * 53 * 53, 2048)
         self.fc2 = nn.Linear(2048, 512)
         self.fc3 = nn.Linear(512, class_labels)
-=======
         self.fc1 = nn.Linear(16 * 53 * 53, 120) 
         self.fc2 = nn.Linear(120, 84) 
         self.fc3 = nn.Linear(84, class_labels)
->>>>>>> 09fe9fc (uploading baseline)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))

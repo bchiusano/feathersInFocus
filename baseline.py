@@ -10,6 +10,11 @@ from transformers import ViTConfig
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 import torch.optim as optim
+import time
+import matplotlib.pyplot as plt
+import seaborn as sns
+from torchinfo import summary
+from sklearn.metrics import confusion_matrix
 
 
 
@@ -30,9 +35,8 @@ train_set = pd.read_csv('train_images.csv')
 
 # load classes and attributes
 class_names = np.load("class_names.npy", allow_pickle=True).item()
+print(class_names)
 n_classes = len(class_names)
-
-attributes = np.load("attributes.npy", allow_pickle=True)
 
 
 config = ViTConfig(
@@ -48,7 +52,9 @@ config = ViTConfig(
 model = ViTForImageClassification(config)
 
 
-transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(), transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])])
+transform = transforms.Compose([transforms.Resize((224, 224)), 
+                                transforms.ToTensor(), 
+                                transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])])
 
 class ImageClassification(Dataset):
     def __init__(self, df):
@@ -75,8 +81,8 @@ test_dataset = ImageClassification(test_split)
 
 # dataloader
 
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True) 
-test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=64, shuffle=False)
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True) 
+test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, shuffle=False)
 
 # making sure everything is on the same device
 
@@ -85,11 +91,15 @@ model.to(DEVICE)
 
 # optimizer 
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 
-def train(model, train_loader, test_loader, epochs=10):
+def train(model, train_loader, test_loader, epochs=3):
+    epoch_times = []
+    train_losses = []
+    test_accuracy = []
     for epoch in range(epochs):
+        start_time = time.time()
         model.train()
         total_loss = 0
 
@@ -106,20 +116,26 @@ def train(model, train_loader, test_loader, epochs=10):
 
             total_loss += loss.item()
 
+        epoch_time = time.time() - start_time
+        epoch_times.append(epoch_time)
+        train_losses.append(total_loss / len(train_loader))
         train_acc = evaluate(model, train_loader)
         test_acc = evaluate(model, test_loader)
+        test_accuracy.append(test_acc)
 
         print(f"epoch {epoch+1}/{epochs}, loss: {total_loss/len(train_loader):.4f} "
-              f"training accuracy: {train_acc:.4f}, test accuracy: {test_acc:.4f}")
+              f"training accuracy: {train_acc:.4f}, test accuracy: {test_acc:.4f}", f"Time: {epoch_time:.2f}s")
+        
+    return train_losses, test_accuracy, epoch_times
 
 
-def evaluate(model, loader):
+def evaluate(model, test_loader):
     model.eval()
     correct = 0
     total = 0
 
     with torch.no_grad():
-        for images, labels in loader:
+        for images, labels in test_loader:
             images = images.to(DEVICE)
             labels = labels.to(DEVICE)
 
@@ -140,23 +156,50 @@ if __name__ == "__main__":
     baseline_acc = evaluate(model, test_loader)
     print("baseline accuracy:", baseline_acc)
 
+# some metrics for computational efficiency comparison to main model
+
+info = summary(model, input_size=(1, 3, 224, 224), verbose=0)
+total_parameters = sum(p.numel() for p in model.parameters())
+print("Total FLOPs:", info.total_mult_adds * 2)
+print("Total parameters: ", total_parameters)
+
+# visualizing what is going on inside the model 
+
+model.eval()
+for i in range(2):
+    image, label = test_dataset[i]
+    image_tensor = image.unsqueeze(0).to(DEVICE)
+
+    outputs = model(pixel_values=image_tensor)
+    logits = outputs.logits.squeeze()
+    probs = torch.softmax(logits, dim=0)
+
+    pred_class = probs.argmax().item()
+
+    print(f"Image {i+1}")
+    print(f"True label: {label+1}")
+    print(f"Logits (first 10 classes): {logits[:10].detach().cpu().numpy()}")
+    print(f"Probabilities (first 10 classes): {probs[:10].detach().cpu().numpy()}")
+    print(f"Predicted class: {pred_class+1} (prob={probs[pred_class].item():.4f})")
+
 
 # creatinc csv for kaggle 
 
-sample = pd.read_csv("test_images_sample.csv")
-predictions = []
-model.eval()
-with torch.no_grad():
-    for image_name in sample["id"]:
-        image_name = str(image_name).strip() + ".jpg"
-        image = Image.open(f"test_images/test_images/{image_name}").convert("RGB")
-        image = transform(image).unsqueeze(0).to(DEVICE)
+# sample = pd.read_csv("test_images_sample.csv")
+# predictions = []
+# model.eval()
+# with torch.no_grad():
+#     for image_name in sample["id"]:
+#         image_name = str(image_name).strip() + ".jpg"
+#         image = Image.open(f"test_images/test_images/{image_name}").convert("RGB")
+#         image = transform(image).unsqueeze(0).to(DEVICE)
 
-        prediction = model(pixel_values=image).logits.argmax(dim=1).item() + 1 # i think this is needed because before we did -1 to have 0-199 but now need 1-200 again
-        predictions.append(prediction)
+#         prediction = model(pixel_values=image).logits.argmax(dim=1).item() + 1 # i think this is needed because before we did -1 to have 0-199 but now need 1-200 again
+#         predictions.append(prediction)
 
 
-sample["label"] = predictions
-sample.to_csv("baseline.csv", index=False)
-print("baseline.csv created")
+# sample["label"] = predictions
+# sample.to_csv("baseline.csv", index=False)
+# print("baseline.csv created")
+
 
