@@ -8,12 +8,13 @@ def train_model(args,
                 model,
                 dataloader,
                 optimizer,
+                scheduler,
                 entropy_loss):
 
     model.train()
     loss_list = []
     # Train CNN
-    for epoch in range(0, args.epochs + 1):  # loop over the dataset multiple times
+    for epoch in range(0, args.epochs):  # loop over the dataset multiple times
 
         running_loss = 0.0
         for i, data in enumerate(dataloader, 0):
@@ -40,7 +41,7 @@ def train_model(args,
         print(f'[Epoch {epoch + 1}] average loss: {avg_loss:.3f}')
         loss_list.append(avg_loss)
 
-        #scheduler.step()
+        scheduler.step()
 
     print('Finished Training')
     cnn_path = './birds_cnn.pt'
@@ -75,25 +76,6 @@ class CNN(nn.Module):
     def __init__(self, class_labels):
         super().__init__()
 
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 53 * 53, 2048)
-        self.fc2 = nn.Linear(2048, 512)
-        self.fc3 = nn.Linear(512, class_labels)
-        self.dropout = nn.Dropout(0.3)
-
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = torch.flatten(x, 1)
-        x = self.dropout(x)
-        x = F.relu(self.fc1(x))
-        x = self.dropout(x)
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-    ''''
         self.extract_features = nn.Sequential(
             # first convolution
             nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding=1),
@@ -121,10 +103,10 @@ class CNN(nn.Module):
         )
 
         self.classify = nn.Sequential(
-            nn.Dropout(0.3),
+            nn.Dropout(0.2),
             nn.Linear(256 * 14 * 14, 512),
             nn.ReLU(),
-            nn.Dropout(0.3),
+            nn.Dropout(0.2),
             nn.Linear(512, class_labels),
         )
 
@@ -133,5 +115,3 @@ class CNN(nn.Module):
         x = torch.flatten(x, 1)
         x = self.classify(x)
         return x
-
-    '''

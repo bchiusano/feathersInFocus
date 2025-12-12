@@ -86,7 +86,7 @@ class Results:
             if total_pred[classname] != 0:
                 accuracy = 100 * float(correct_count) / total_pred[classname]
 
-                if total_pred[classname] > 5.0:
+                if accuracy > 0.1:
                     non_zero_class.append(clean_name)
                     non_zero_acc.append(accuracy)
                 print(f'Accuracy for class: {clean_name} is {accuracy:.1f} %')

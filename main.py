@@ -57,7 +57,7 @@ def load_arg_parser():
     parser = argparse.ArgumentParser(description="Feathers in Focus")
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--test-batch-size", type=int, default=64)
-    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--gamma", type=float, default=0.7)
     parser.add_argument("--dry-run", action="store_true")
@@ -94,7 +94,8 @@ if __name__ == "__main__":
     entropy_loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(cnn.parameters(), lr=args.lr, weight_decay=1e-4)
 
-    # scheduler = StepLR(optimizer, step_size=5, gamma=0.5) # halves the learning rate every 5 epochs
+    # halves the learning rate every 7 epochs
+    scheduler = StepLR(optimizer, step_size=7, gamma=0.5)
 
     print("Training Model...")
 
@@ -102,6 +103,7 @@ if __name__ == "__main__":
                            cnn,
                            train_dataloader,
                            optimizer,
+                           scheduler,
                            entropy_loss)
     
     summaries.plot_loss(avg_loss)
