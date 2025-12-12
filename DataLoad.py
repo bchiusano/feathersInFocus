@@ -2,7 +2,7 @@ import pandas as pd
 import torch as tc
 from PIL import Image
 from pathlib import Path
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 from torchvision.transforms import v2
 import os
 
@@ -16,6 +16,10 @@ TRANSFORM = v2.Compose(
                      std=[0.5, 0.5, 0.5])
     ]
 )
+
+
+def calculate_img_size(image):
+    pass
 
 
 class DataLoad(Dataset):
@@ -38,7 +42,8 @@ class DataLoad(Dataset):
         # read the image and convert it to RGB and apply transformation
         image = self.transform(Image.open(image_path).convert("RGB"))
 
-        label_image = int(self.data['label'][item_idx])
+        # reindexing labels from 0 to 199
+        label_image = int(self.data['label'][item_idx]) - 1
         return image, label_image
 
 
