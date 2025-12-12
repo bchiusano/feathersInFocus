@@ -10,6 +10,7 @@ def train_model(args,
                 optimizer,
                 entropy_loss):
 
+    model.train()
     loss_list = []
     # Train CNN
     for epoch in range(0, args.epochs + 1):  # loop over the dataset multiple times
@@ -42,7 +43,7 @@ def train_model(args,
         #scheduler.step()
 
     print('Finished Training')
-    cnn_path = './forth_cnn.pth'
+    cnn_path = './birds_cnn.pt'
     torch.save(model.state_dict(), cnn_path)
 
     return loss_list
@@ -50,6 +51,8 @@ def train_model(args,
 
 def test_model(model,
                dataloader):
+    # does not perform dropout
+    model.eval()
 
     predicted_labels = []
     sample = pd.read_csv('test_images_sample.csv')
@@ -71,18 +74,64 @@ def test_model(model,
 class CNN(nn.Module):
     def __init__(self, class_labels):
         super().__init__()
+
         self.conv1 = nn.Conv2d(3, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.fc1 = nn.Linear(16 * 53 * 53, 2048)
         self.fc2 = nn.Linear(2048, 512)
         self.fc3 = nn.Linear(512, class_labels)
+        self.dropout = nn.Dropout(0.3)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
         x = torch.flatten(x, 1)
+        x = self.dropout(x)
         x = F.relu(self.fc1(x))
+        x = self.dropout(x)
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
+    ''''
+        self.extract_features = nn.Sequential(
+            # first convolution
+            nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=32),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+
+            # second convolution
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=64),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+
+            # third convolution
+            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=128),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+
+            # forth convolution
+            nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=256),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2)
+        )
+
+        self.classify = nn.Sequential(
+            nn.Dropout(0.3),
+            nn.Linear(256 * 14 * 14, 512),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(512, class_labels),
+        )
+
+    def forward(self, x):
+        x = self.extract_features(x)
+        x = torch.flatten(x, 1)
+        x = self.classify(x)
+        return x
+
+    '''

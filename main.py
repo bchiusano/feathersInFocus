@@ -32,17 +32,31 @@ def load_data(eda):
     test_dataset = DataLoad(data=test_set, data_path=Path("./test_images"))
 
     # EDA section
-    eda.eda_data(data=train)
-    eda.eda_data(data=validate)
+    eda.eda_data(data=train, set_name="Training")
+    eda.eda_data(data=validate, set_name="Validation")
 
     return train_dataset, validate_dataset, test_dataset
+
+
+def load_train_test(eda):
+    # load the data with pandas
+    train_set = pd.read_csv('train_images.csv')
+    test_set = pd.read_csv('test_images_path.csv')
+
+    train_dataset = DataLoad(data=train_set, data_path=Path("./train_images"))
+    test_dataset = DataLoad(data=test_set, data_path=Path("./test_images"))
+
+    # EDA section
+    # eda.eda_data(data=train_set, set_name="Training")
+
+    return train_dataset, test_dataset
 
 
 # Specify the hyperparameters
 def load_arg_parser():
     parser = argparse.ArgumentParser(description="Feathers in Focus")
     parser.add_argument("--batch-size", type=int, default=64)
-    parser.add_argument("--test-batch-size", type=int, default=256)
+    parser.add_argument("--test-batch-size", type=int, default=64)
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--gamma", type=float, default=0.7)
@@ -67,21 +81,23 @@ if __name__ == "__main__":
     # load and transform the data
     train_data, validate_data, test_data = load_data(summaries)
 
+    print("Loading Data...")
     train_dataloader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
     validate_dataloader = DataLoader(validate_data, batch_size=args.test_batch_size, shuffle=False)
     test_dataloader = DataLoader(test_data, batch_size=args.test_batch_size, shuffle=False)
+
 
     # CNN and Calculate Loss Function
     cnn = CNN(class_labels=200).to(device)
 
     # cross entropy loss does not require softmax
-    entropy_loss = nn.CrossEntropyLoss()  # TODO: which loss to use
-    optimizer = optim.Adam(cnn.parameters(), lr=args.lr)
+    entropy_loss = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(cnn.parameters(), lr=args.lr, weight_decay=1e-4)
 
-    # optimizer = optim.SGD(cnn.parameters(), lr=args.lr, momentum=0.9)  # TODO: which optimizer to use
     # scheduler = StepLR(optimizer, step_size=5, gamma=0.5) # halves the learning rate every 5 epochs
 
-    '''
+    print("Training Model...")
+
     avg_loss = train_model(args,
                            cnn,
                            train_dataloader,
@@ -89,14 +105,17 @@ if __name__ == "__main__":
                            entropy_loss)
     
     summaries.plot_loss(avg_loss)
-    '''
 
     # load model (once its saved) - kind of confused on whether to save it first
     cnn2 = CNN(class_labels=200)
-    cnn2.load_state_dict(torch.load('./forth_cnn.pth', weights_only=True))
+    cnn2.load_state_dict(torch.load('./birds_cnn.pt', weights_only=True))
     # test set
+    print("Testing Model...")
     test_model(cnn2, test_dataloader)
 
     # results and visualisations
     summaries.calc_accuracy(cnn2, validate_dataloader)
+    # summaries.calc_accuracy(cnn2, train_dataloader)
 
+    # difference between pth and pt for saving model
+    # more convolutions

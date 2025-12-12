@@ -5,6 +5,18 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
+def plot_bars(df, xs, ys, y_label, title):
+    plt.figure(figsize=(14, 6))
+    sns.barplot(data=df, x=xs, y=ys, hue=xs, palette='viridis', legend=False)
+    plt.xlabel('Class Name', fontsize=12)
+    plt.ylabel(y_label, fontsize=12)
+    plt.title(title, fontsize=14)
+    plt.xticks(rotation=90, ha='right')
+    plt.ylim(0, max(df[ys]))
+    plt.tight_layout()
+    plt.show()
+
+
 class Results:
     def __init__(self, name):
         class_names = np.load("class_names.npy", allow_pickle=True).item()
@@ -12,7 +24,7 @@ class Results:
         self.name = name
         self.classes = class_names
 
-    def eda_data(self, data):
+    def eda_data(self, data, set_name):
         # how many of bird species in each set
         # if any species are missing
 
@@ -23,6 +35,7 @@ class Results:
         result['class_name'] = result['label'].map(reverse_classes)
 
         print(result)
+        plot_bars(result, 'class_name', 'count', 'Count', f'Class Count in {set_name} set')
 
     def plot_loss(self, loss):
 
@@ -37,6 +50,7 @@ class Results:
         plt.show()
 
     def calc_accuracy(self, model, dataloader):
+        model.eval()
         correct = 0
         total = 0
 
@@ -72,25 +86,18 @@ class Results:
             if total_pred[classname] != 0:
                 accuracy = 100 * float(correct_count) / total_pred[classname]
 
-                non_zero_class.append(clean_name)
-                non_zero_acc.append(accuracy)
+                if total_pred[classname] > 5.0:
+                    non_zero_class.append(clean_name)
+                    non_zero_acc.append(accuracy)
                 print(f'Accuracy for class: {clean_name} is {accuracy:.1f} %')
             else:
                 print(f'Accuracy for class: {clean_name} is 0%')
 
-        # Plotting the accuracy of classes (non-zero)
+        # Plotting the accuracy of classes (non-zero and more than 5%)
         acc_df = pd.DataFrame({'class_name': non_zero_class, 'accuracy': non_zero_acc})
         acc_df = acc_df.sort_values('accuracy', ascending=False)
 
-        # plt.figure(figsize=(14, 6))
-        # sns.barplot(data=acc_df, x='class_name', y='accuracy', palette='viridis')
-        # plt.xlabel('Class Name', fontsize=12)
-        # plt.ylabel('Accuracy (%)', fontsize=12)
-        # plt.title('Per-Class Accuracy', fontsize=14)
-        # plt.xticks(rotation=90, ha='right')
-        # plt.ylim(0, 100)
-        # plt.tight_layout()
-        # plt.show()
+        plot_bars(acc_df, 'class_name', 'accuracy', 'Accuracy (%)', 'Per-Class Accuracy')
 
     def show_patterns(self):
         pass
