@@ -78,7 +78,7 @@ if __name__ == "__main__":
     cnn = CNN(class_labels=201).to(device)
 
     entropy_loss = nn.CrossEntropyLoss()  # TODO: which loss to use
-    optimizer = optim.SGD(cnn.parameters(), lr=args.lr, momentum=0.9)  # TODO: which optimizer to use
+    optimizer = torch.optim.Adam(cnn.parameters(), lr=args.lr)  # TODO: which optimizer to use
     # halves the learning rate every 5 epochs
     scheduler = StepLR(optimizer, step_size=5, gamma=0.5)
 
